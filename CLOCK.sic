@@ -1,0 +1,221 @@
+
+
+#start project CLOCK
+CLOCK	START	7E60            # Program starts at address 7E60
+
+
+#constants and reserve space 
+SEC	WORD    3600            
+
+#numbers 
+SIXTY	WORD    60              
+TWELVE	WORD	12              
+ZERO    WORD    0
+MINUS1	WORD	-1
+TEN	WORD	10  
+            
+ASCII	WORD	48           	# ASCII offset for 0
+
+CAPA	WORD	65
+CAPP	WORD	80
+
+#variables
+HOUR	RESW	1               
+MIN	RESW    1               
+AMPM	RESW    1               
+DISP	RESW    1               
+SECH	RESW	1
+
+
+TEMP	RESW	1
+TEMP2	RESW	1
+INTH	RESW	1
+MINREM	RESW	1
+
+OUTPUT	WORD	64
+
+TIMER	WORD    -32700	       # Timer value from input
+
+
+################################################################################
+
+#main
+	LDA	TIMER          
+	STA	TIMER           
+	COMP	ZERO 
+
+        
+	JLT	FORM24    #negative    	
+	J	FORM12    #positive     	
+
+
+################################################################################
+
+FORM24	LDA	TIMER   
+	MUL	MINUS1  
+	STA	TIMER		#convert negative to positive
+      	
+	DIV	SEC     	#divide by 3600
+	STA     INTH		#store full int hour 	
+	
+	MUL	SEC        
+	STA	SECH		#SECH now storing full hour multiplied with 3600, INTH x 3600
+	
+	LDA	TIMER		
+	SUB     SECH         	#subtract SECH = INTH x 3600
+	STA	MINREM		
+	DIV     SIXTY           
+	STA     MIN         	#storing full minutes in MIN
+	J       DIS24       	#jump 24-hour display routine
+
+################################################################################
+
+FORM12	LDA     TIMER           
+	DIV	SEC     	#divide by 3600
+	STA     INTH		#store full int hour 	
+	
+	MUL	SEC        
+	STA	SECH		#SECH now storing full hour multiplied with 3600, INTH x 3600
+	
+	LDA	TIMER		
+	SUB     SECH         	#subtract SECH = INTH x 3600
+	STA	MINREM		
+	DIV     SIXTY           
+	STA     MIN         	#storing full minutes in MIN
+
+
+	LDA     INTH            
+	COMP    TWELVE          #compare with 12
+	JLT     SETAM          	#if less than 12, AM: skip subtracting 12H
+
+	SUB     TWELVE          #PM: subtract 12 
+	STA	INTH		#adjusted PM-format
+	J	SETPM		#DO I NEED TO HAVE THIS
+
+################################################################################
+
+SETAM	LDA     CAPA            #load in A for AM
+	STA     AMPM            # Store in AMPM
+	J       DIS12       	#jump 12-hour display routine
+
+SETPM	LDA     CAPP            #load in P for AM
+	STA     AMPM            # Store in AMPM
+	J       DIS12       	#jump 12-hour display routine
+
+################################################################################
+
+
+DIS24   LDA     INTH           
+        DIV     TEN            #get tens digit
+        STA     TEMP           
+
+        ADD     ASCII          #ASCII format + 30
+	STA	TEMP
+
+        WD      OUTPUT         #write tens 
+
+        LDA	TEMP
+	SUB	ASCII
+	STA	TEMP
+	MUL	TEN
+	STA	TEMP
+
+	LDA	INTH
+	SUB	TEMP
+	STA	INTH		#ental
+	ADD	ASCII
+	STA	INTH
+	
+
+        WD      OUTPUT         # Write the units digit to output
+
+        LDA     MIN           
+        DIV     TEN            #get tens digit
+        STA     TEMP	       #OVERWRITE TEMP WITH MIN           
+
+        ADD     ASCII          #ASCII format + 30
+	STA	TEMP
+
+        WD      OUTPUT         #write tens 
+
+        LDA	TEMP
+	SUB	ASCII
+	STA	TEMP
+	MUL	TEN
+	STA	TEMP
+
+	LDA	MIN
+	SUB	TEMP
+	STA	MIN		#ental
+	ADD	ASCII
+	STA	MIN
+
+	WD      OUTPUT         #write tens 
+
+        J       EXIT           # Jump to exit
+
+################################################################################	
+
+DIS12   LDA     INTH           
+        DIV     TEN            #get tens digit
+        STA     TEMP           
+
+        ADD     ASCII          #ASCII format + 30
+	STA	TEMP
+
+        WD      OUTPUT         #write tens 
+
+        LDA	TEMP
+	SUB	ASCII
+	STA	TEMP
+	MUL	TEN
+	STA	TEMP
+
+	LDA	INTH
+	SUB	TEMP
+	STA	INTH		#ental
+	ADD	ASCII
+	STA	INTH
+	
+
+        WD      OUTPUT         # Write the units digit to output
+
+        LDA     MIN           
+        DIV     TEN            #get tens digit
+        STA     TEMP	       #OVERWRITE TEMP WITH MIN           
+
+        ADD     ASCII          #ASCII format + 30
+	STA	TEMP
+
+        WD      OUTPUT         #write tens 
+
+        LDA	TEMP
+	SUB	ASCII
+	STA	TEMP
+	MUL	TEN
+	STA	TEMP
+
+	LDA	MIN
+	SUB	TEMP
+	STA	MIN		#ental
+	ADD	ASCII
+	STA	MIN
+
+
+	WD      OUTPUT         #write tens 
+
+
+        LDA     AMPM           # Load AM/PM indicator
+        WD      OUTPUT         # Write AM/PM to output
+
+        J       EXIT           # Jump to exit
+ 
+################################################################################	
+
+EXIT	LDL     ZERO            # Load 0 into the link register
+	RSUB                    # Return to the monitor program
+
+	END     CLOCK           # End program
+
+
+
